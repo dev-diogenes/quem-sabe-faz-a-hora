@@ -1,7 +1,7 @@
 {
   "name": "quem-sabe-faz-a-hora",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Extensão Chrome: hub de integração entre sistemas com chat Claude no painel lateral.",
   "type": "module",
   "scripts": {

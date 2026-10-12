@@ -8,6 +8,7 @@ const SYSTEM_PROMPT = `Você analisa conversas comerciais e de atendimento do Wh
 
 Avalie a conversa do ponto de vista do cliente:
 - Sentimento: como o cliente se sente e como isso mudou ao longo da conversa.
+- Satisfação: nota de 1 a 5 para a satisfação do cliente com o atendimento e o produto.
 - Oportunidade de venda: sinais de interesse em comprar (pedidos de preço, prazo, condições, comparação).
 - Upsell: sinais de que o cliente se beneficiaria de um plano, volume ou produto maior.
 - Risco de cancelamento: insatisfação, menção a concorrentes, pedidos de cancelamento, atrasos recorrentes, silêncio após problema.

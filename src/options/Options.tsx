@@ -3,12 +3,14 @@ import { connectors, getConnector } from "../integrations/registry";
 import type { Integration, IntegrationConfig } from "../integrations/types";
 import { DEFAULT_SETTINGS, storage, type Effort, type Settings } from "../lib/storage";
 import { useStored } from "../lib/useStorage";
+import { webhookOrigin } from "../whatsapp/webhook";
 
 const EFFORTS: Effort[] = ["low", "medium", "high", "xhigh", "max"];
 
 function SettingsForm() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string>();
   useEffect(() => void storage.getSettings().then(setSettings), []);
 
   return (
@@ -16,6 +18,21 @@ function SettingsForm() {
       className="panel"
       onSubmit={async (e) => {
         e.preventDefault();
+        setError(undefined);
+        if (settings.webhookUrl) {
+          let origin: string;
+          try {
+            origin = webhookOrigin(settings.webhookUrl);
+          } catch {
+            setError("URL do webhook inválida.");
+            return;
+          }
+          // Permissão de host só para a origem do webhook.
+          if (!(await chrome.permissions.request({ origins: [origin] }))) {
+            setError("Permissão para o webhook negada.");
+            return;
+          }
+        }
         await storage.saveSettings(settings);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
@@ -44,6 +61,28 @@ function SettingsForm() {
           ))}
         </select>
       </label>
+      <h2>Conversas do WhatsApp</h2>
+      <label>
+        Webhook para o CRM
+        <input
+          type="url"
+          value={settings.webhookUrl}
+          placeholder="https://n8n.suaempresa.com/webhook/conversas"
+          onChange={(e) => setSettings({ ...settings, webhookUrl: e.target.value })}
+        />
+        <small className="muted">
+          Recebe a análise em JSON (POST). Use n8n, Zapier ou Make para atualizar o CRM: nota, tarefa, health score.
+        </small>
+      </label>
+      <label className="switch">
+        <input
+          type="checkbox"
+          checked={settings.webhookIncluirMensagens}
+          onChange={(e) => setSettings({ ...settings, webhookIncluirMensagens: e.target.checked })}
+        />
+        Enviar também a transcrição da conversa
+      </label>
+      {error && <p className="error">{error}</p>}
       <button className="primary" type="submit">
         {saved ? "Salvo ✓" : "Salvar"}
       </button>

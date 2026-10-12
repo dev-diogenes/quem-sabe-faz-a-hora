@@ -9,12 +9,18 @@ export interface Settings {
   apiKey: string;
   model: string;
   effort: Effort;
+  /** Destino das análises de conversa (n8n, Zapier, CRM). Vazio = desligado. */
+  webhookUrl: string;
+  /** Envia também a transcrição, além da análise. */
+  webhookIncluirMensagens: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   apiKey: "",
   model: "claude-opus-5-5",
   effort: "medium",
+  webhookUrl: "",
+  webhookIncluirMensagens: false,
 };
 
 export interface ToolActivity {
@@ -43,10 +49,20 @@ export interface Conversation {
 
 /** Última conversa do WhatsApp capturada e sua análise, se houver. */
 export interface WhatsAppCapture {
+  id: string;
   chat: WaChat;
   analise?: ConversationAnalysis;
   anonimizado: boolean;
 }
+
+/** Uma conversa analisada, guardada no histórico. */
+export interface AnalysisRecord extends WhatsAppCapture {
+  analise: ConversationAnalysis;
+  analisadoEm: string;
+  enviadoEm?: string;
+}
+
+const MAX_HISTORY = 50;
 
 const EMPTY_CONVERSATION: Conversation = { api: [], display: [] };
 
@@ -70,6 +86,14 @@ export const storage = {
 
   getWhatsApp: () => read<WhatsAppCapture | null>("whatsapp", null),
   saveWhatsApp: (c: WhatsAppCapture | null) => write("whatsapp", c),
+
+  getHistory: () => read<AnalysisRecord[]>("whatsappHistory", []),
+  /** Insere ou atualiza um registro, mantendo os mais recentes primeiro. */
+  async upsertHistory(record: AnalysisRecord) {
+    const list = (await read<AnalysisRecord[]>("whatsappHistory", [])).filter((r) => r.id !== record.id);
+    await write("whatsappHistory", [record, ...list].slice(0, MAX_HISTORY));
+  },
+  clearHistory: () => write("whatsappHistory", []),
 };
 
 /** Hook simples: chama `cb` quando uma chave do storage muda. */

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { ANALYZE_CHAT, GET_WHATSAPP_CHAT } from "../../lib/messages";
-import { storage, type WhatsAppCapture } from "../../lib/storage";
+import { storage, type AnalysisRecord, type WhatsAppCapture } from "../../lib/storage";
 import { useStored } from "../../lib/useStorage";
 import { anonymize } from "../../whatsapp/anonymize";
 import type { ConversationAnalysis, Nivel } from "../../whatsapp/analysis";
 import { download } from "../../whatsapp/export";
 import { extractWhatsAppChat } from "../../whatsapp/extract";
 import type { WaChat } from "../../whatsapp/types";
+import { sendToWebhook } from "../../whatsapp/webhook";
 
 const WHATSAPP_URL = "https://web.whatsapp.com/";
 
@@ -78,6 +79,19 @@ function Analysis({ a }: { a: ConversationAnalysis }) {
         )}
       </div>
 
+      <div className="signal">
+        <div className="signal-head">
+          <strong>Satisfação</strong>
+          <span className="score" aria-label={`${a.satisfacao.nota} de 5`}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <span key={n} className={n <= a.satisfacao.nota ? "on" : ""} />
+            ))}
+            <b>{a.satisfacao.nota}/5</b>
+          </span>
+        </div>
+        <p className="muted">{a.satisfacao.justificativa}</p>
+      </div>
+
       <p>{a.resumo}</p>
 
       <SignalCard title="Oportunidade de venda" nivel={a.oportunidade_venda.nivel} evidencias={a.oportunidade_venda.evidencias} />
@@ -116,13 +130,50 @@ function Analysis({ a }: { a: ConversationAnalysis }) {
   );
 }
 
+function History({ onOpen }: { onOpen(r: AnalysisRecord): void }) {
+  const history = useStored<AnalysisRecord[]>("whatsappHistory", storage.getHistory, []);
+  if (!history.length) return null;
+  return (
+    <div className="history">
+      <div className="section-title">
+        <h2>Analisadas recentemente</h2>
+        <button className="link" onClick={() => confirm("Apagar o histórico de análises?") && void storage.clearHistory()}>
+          Limpar
+        </button>
+      </div>
+      <ul className="cards">
+        {history.map((r) => (
+          <li key={r.id} className="card" onClick={() => onOpen(r)}>
+            <div className="card-body">
+              <strong>{r.chat.contato}</strong>
+              <span className="muted">
+                {new Date(r.analisadoEm).toLocaleString("pt-BR")} · satisfação {r.analise.satisfacao.nota}/5
+                {r.enviadoEm ? " · enviada ao CRM" : ""}
+              </span>
+            </div>
+            <span className="history-levels">
+              <span className="history-level">
+                Risco <Level nivel={r.analise.risco_cancelamento.nivel} risco />
+              </span>
+              <span className="history-level">
+                Venda <Level nivel={r.analise.oportunidade_venda.nivel} />
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function WhatsApp() {
   const capture = useStored<WhatsAppCapture | null>("whatsapp", storage.getWhatsApp, null);
   const [anonimizar, setAnonimizar] = useState(true);
-  const [busy, setBusy] = useState<"capture" | "analyze">();
+  const [busy, setBusy] = useState<"capture" | "analyze" | "send">();
+  const settings = useStored("settings", storage.getSettings, null);
   const [error, setError] = useState<string>();
 
-  const run = async (kind: "capture" | "analyze", fn: () => Promise<void>) => {
+  const run = async (kind: "capture" | "analyze" | "send", fn: () => Promise<void>) => {
     setBusy(kind);
     setError(undefined);
     try {
@@ -137,7 +188,11 @@ export function WhatsApp() {
   const capturar = () =>
     run("capture", async () => {
       const chat = await captureOpenChat();
-      await storage.saveWhatsApp({ chat: anonimizar ? anonymize(chat) : chat, anonimizado: anonimizar });
+      await storage.saveWhatsApp({
+        id: crypto.randomUUID(),
+        chat: anonimizar ? anonymize(chat) : chat,
+        anonimizado: anonimizar,
+      });
     });
 
   const analisar = () =>
@@ -145,7 +200,19 @@ export function WhatsApp() {
       if (!capture) return;
       const res = await chrome.runtime.sendMessage({ type: ANALYZE_CHAT, chat: capture.chat });
       if (!res?.ok) throw new Error(res?.erro ?? "Falha na análise.");
-      await storage.saveWhatsApp({ ...capture, analise: res.analise });
+      const record: AnalysisRecord = { ...capture, analise: res.analise, analisadoEm: new Date().toISOString(), enviadoEm: undefined };
+      await storage.saveWhatsApp(record);
+      await storage.upsertHistory(record);
+    });
+
+  const enviar = () =>
+    run("send", async () => {
+      if (!capture?.analise || !settings?.webhookUrl) return;
+      const record = capture as AnalysisRecord;
+      await sendToWebhook(settings.webhookUrl, record, settings.webhookIncluirMensagens);
+      const sent: AnalysisRecord = { ...record, enviadoEm: new Date().toISOString() };
+      await storage.saveWhatsApp(sent);
+      await storage.upsertHistory(sent);
     });
 
   return (
@@ -194,9 +261,26 @@ export function WhatsApp() {
             conversas que você tem autorização para tratar (LGPD).
           </p>
 
-          {capture.analise && <Analysis a={capture.analise} />}
+          {capture.analise && (
+            <>
+              <Analysis a={capture.analise} />
+              {settings?.webhookUrl ? (
+                <button className="primary" onClick={enviar} disabled={!!busy}>
+                  {busy === "send"
+                    ? "Enviando…"
+                    : (capture as AnalysisRecord).enviadoEm
+                      ? "Enviada ao CRM ✓ · reenviar"
+                      : "Enviar análise ao CRM"}
+                </button>
+              ) : (
+                <button onClick={() => chrome.runtime.openOptionsPage()}>Configurar envio ao CRM (webhook)</button>
+              )}
+            </>
+          )}
         </>
       )}
+
+      <History onOpen={(r) => void storage.saveWhatsApp(r)} />
     </section>
   );
 }

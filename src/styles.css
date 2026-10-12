@@ -187,3 +187,10 @@ th { background: var(--surface-2); }
 .signal.next { border-color: var(--accent); }
 .suggested { padding: 8px 10px; background: var(--surface-2); border-radius: 8px; white-space: pre-wrap; }
 .signal.next button { align-self: flex-start; }
+.score { display: inline-flex; align-items: center; gap: 3px; }
+.score span { width: 14px; height: 6px; border-radius: 3px; background: var(--surface-2); }
+.score span.on { background: var(--accent); }
+.score b { margin-left: 6px; font-size: 12px; }
+.history { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.history-levels { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.history-level { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }

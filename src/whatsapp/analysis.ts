@@ -9,6 +9,10 @@ export const ConversationAnalysisSchema = z.object({
     score: z.number().describe("De -1 (muito negativo) a 1 (muito positivo)."),
     evolucao: z.string().describe("Como o sentimento do cliente mudou ao longo da conversa."),
   }),
+  satisfacao: z.object({
+    nota: z.number().int().describe("Satisfação do cliente de 1 (muito insatisfeito) a 5 (muito satisfeito)."),
+    justificativa: z.string(),
+  }),
   emocoes: z.array(z.string()).describe("Emoções predominantes do cliente, ex.: frustração, entusiasmo."),
   oportunidade_venda: z.object({ nivel: Nivel, evidencias: z.array(z.string()) }),
   upsell: z.object({

@@ -14,7 +14,7 @@ Extensão do Google Chrome (Manifest V3) que funciona como **hub de integração
   - o Claude **consulta os sistemas por conta própria** via *tool use* (cada conector expõe ferramentas);
   - opção **📄 Página atual**: o texto da aba ativa entra no contexto;
   - respostas em streaming, com histórico salvo localmente.
-- **Conversas do WhatsApp** (aba *Conversas*): captura a conversa aberta no WhatsApp Web, anonimiza dados pessoais, exporta em JSON/CSV/TXT e analisa com o Claude **sentimento, oportunidade de venda, upsell e risco de cancelamento**, com evidências, próxima ação e mensagem sugerida. Escopo e riscos em [`docs/escopo-conversas-whatsapp.md`](docs/escopo-conversas-whatsapp.md).
+- **Conversas do WhatsApp** (aba *Conversas*): captura a conversa aberta no WhatsApp Web, anonimiza dados pessoais, exporta em JSON/CSV/TXT e analisa com o Claude **sentimento, satisfação, oportunidade de venda, upsell e risco de cancelamento**, com evidências, próxima ação e mensagem sugerida. Guarda o histórico e envia as análises ao CRM por webhook (n8n, Zapier, Make). Escopo e riscos em [`docs/escopo-conversas-whatsapp.md`](docs/escopo-conversas-whatsapp.md).
 - **Conectores incluídos**:
   | Conector | Para quê |
   |---|---|
