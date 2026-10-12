@@ -2,11 +2,22 @@ import { useEffect, useState } from "react";
 import { getConnector } from "../../integrations/registry";
 import type { Integration, Overview } from "../../integrations/types";
 import { storage } from "../../lib/storage";
+import { BackIcon, ChatIcon, ConnectorIcon, RefreshIcon } from "../Icons";
 
 interface Props {
   id: string;
   onBack(): void;
   onChat(): void;
+}
+
+/** Cor do status pelo texto da célula (atrasado, entregue...). */
+function statusTone(v: string | number): string | undefined {
+  const s = String(v).toLowerCase();
+  if (/atrasad|inadimpl|erro|falh|stuck|cancel/.test(s)) return "danger";
+  if (/entregue|conclu|ativo|ok|pago|done|closed/.test(s)) return "ok";
+  if (/separando|andamento|pendente|aberto|open|working/.test(s)) return "warn";
+  if (/trânsito|transito|enviado/.test(s)) return "info";
+  return undefined;
 }
 
 export function SystemDetail({ id, onBack, onChat }: Props) {
@@ -37,35 +48,32 @@ export function SystemDetail({ id, onBack, onChat }: Props) {
   const connector = integration && getConnector(integration.connectorId);
 
   return (
-    <section className="detail">
+    <section className="page">
       <div className="section-title">
         <button className="link" onClick={onBack}>
-          ← Hub
+          <BackIcon size={16} /> Hub
         </button>
-        <button className="link" onClick={() => void load()} disabled={loading}>
-          ↻ Atualizar
+        <button className="icon" aria-label="Atualizar dados" onClick={() => void load()} disabled={loading}>
+          <RefreshIcon />
         </button>
       </div>
       {integration && connector && (
         <div className="detail-head">
-          <span className="emoji big">{connector.emoji}</span>
+          <ConnectorIcon id={connector.id} size={24} />
           <div>
-            <h2>{integration.name}</h2>
+            <h1 className="poster small">{integration.name}</h1>
             <span className="muted">{connector.description}</span>
           </div>
         </div>
       )}
-      <button className="primary" onClick={onChat}>
-        💬 Perguntar ao Claude sobre este sistema
-      </button>
 
       {loading && <p className="muted">Carregando dados…</p>}
       {error && <p className="error">{error}</p>}
       {overview && !loading && (
         <>
-          <div className="metrics">
+          <div className="stats">
             {overview.metrics.map((m) => (
-              <div key={m.label} className="metric" title={m.hint}>
+              <div key={m.label} className="stat" title={m.hint}>
                 <span className="value">{m.value}</span>
                 <span className="label">{m.label}</span>
               </div>
@@ -73,7 +81,7 @@ export function SystemDetail({ id, onBack, onChat }: Props) {
           </div>
           {overview.tables.map((t) => (
             <div key={t.title} className="table-block">
-              <h3>{t.title}</h3>
+              <h2>{t.title}</h2>
               <div className="table-wrap">
                 <table>
                   <thead>
@@ -81,7 +89,12 @@ export function SystemDetail({ id, onBack, onChat }: Props) {
                   </thead>
                   <tbody>
                     {t.rows.map((r, i) => (
-                      <tr key={i}>{r.map((v, j) => <td key={j}>{v}</td>)}</tr>
+                      <tr key={i}>
+                        {r.map((v, j) => {
+                          const tone = statusTone(v);
+                          return <td key={j}>{tone ? <span className={`status ${tone}`}>{v}</span> : v}</td>;
+                        })}
+                      </tr>
                     ))}
                   </tbody>
                 </table>
@@ -90,6 +103,10 @@ export function SystemDetail({ id, onBack, onChat }: Props) {
           ))}
         </>
       )}
+
+      <button className="primary block" onClick={onChat}>
+        <ChatIcon /> Perguntar ao Claude sobre este sistema
+      </button>
     </section>
   );
 }

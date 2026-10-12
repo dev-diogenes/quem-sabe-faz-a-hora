@@ -1,11 +1,108 @@
 import { useEffect, useState } from "react";
 import { connectors, getConnector } from "../integrations/registry";
 import type { Integration, IntegrationConfig } from "../integrations/types";
-import { DEFAULT_SETTINGS, storage, type Effort, type Settings } from "../lib/storage";
+import { DEFAULT_SETTINGS, storage, type Destino, type Effort, type Settings } from "../lib/storage";
+import { sensedata } from "../conversas/sensedata";
 import { useStored } from "../lib/useStorage";
-import { webhookOrigin } from "../whatsapp/webhook";
+import { Carnation, ConnectorIcon } from "../sidepanel/Icons";
+import { webhookOrigin } from "../conversas/webhook";
 
 const EFFORTS: Effort[] = ["low", "medium", "high", "xhigh", "max"];
+
+interface Opcoes {
+  tipos: string[];
+  status: string[];
+  prioridades: string[];
+  tiposDado: string[];
+}
+
+/** Configuração do Sensedata: token, responsável e o que gravar em cada destino. */
+function SensedataSection({ settings, onChange }: { settings: Settings; onChange(s: Settings): void }) {
+  const sd = settings.sensedata;
+  const set = (patch: Partial<Settings["sensedata"]>) => onChange({ ...settings, sensedata: { ...sd, ...patch } });
+  const [opcoes, setOpcoes] = useState<Opcoes>();
+  const [status, setStatus] = useState<{ ok: boolean; message: string }>();
+
+  const conectar = async () => {
+    setStatus(undefined);
+    try {
+      const me = await sensedata.me(sd);
+      const [tipos, st, prio, tiposDado] = await Promise.all([
+        sensedata.tiposAtividade(sd),
+        sensedata.statusAtividade(sd),
+        sensedata.prioridades(sd),
+        sensedata.tiposDado(sd),
+      ]);
+      setOpcoes({
+        tipos: tipos.map((t) => t.description),
+        status: st.map((t) => t.description),
+        prioridades: prio.map((t) => t.description),
+        tiposDado,
+      });
+      setStatus({ ok: true, message: `Conectado a ${me.name} (${me.tenant}) como ${me.username}.` });
+    } catch (e) {
+      setStatus({ ok: false, message: String(e instanceof Error ? e.message : e) });
+    }
+  };
+
+  // Campo de lista quando as opções foram carregadas; texto livre antes disso.
+  const escolha = (props: { label: string; value: string; options?: string[]; onPick(v: string): void; help?: string }) => (
+    <label>
+      {props.label}
+      {props.options ? (
+        <select value={props.value} onChange={(e) => props.onPick(e.target.value)}>
+          <option value="">Selecione…</option>
+          {props.options.map((o) => (
+            <option key={o}>{o}</option>
+          ))}
+        </select>
+      ) : (
+        <input value={props.value} onChange={(e) => props.onPick(e.target.value)} placeholder="Conecte para listar as opções" />
+      )}
+      {props.help && <small className="muted">{props.help}</small>}
+    </label>
+  );
+
+  return (
+    <>
+      <h2>Sensedata</h2>
+      <label>
+        Token da API (SenseConnect)
+        <input type="password" value={sd.token} onChange={(e) => set({ token: e.target.value })} placeholder="Gerenciador de chave de API" />
+        <small className="muted">
+          O contato é localizado pelos campos <b>phone</b> e <b>phone2</b> (WhatsApp) ou <b>email</b> (Gmail).
+        </small>
+      </label>
+      <div className="row">
+        <button type="button" onClick={() => void conectar()} disabled={!sd.token}>
+          Conectar e carregar opções
+        </button>
+      </div>
+      {status && <p className={status.ok ? "success" : "error"}>{status.message}</p>}
+
+      <h3>Atividade</h3>
+      <label>
+        E-mail do responsável no Sensedata
+        <input type="email" value={sd.responsavel} onChange={(e) => set({ responsavel: e.target.value })} placeholder="voce@empresa.com" />
+      </label>
+      <div className="grid-3">
+        {escolha({ label: "Tipo", value: sd.tipoAtividade, options: opcoes?.tipos, onPick: (v) => set({ tipoAtividade: v }), })}
+        {escolha({ label: "Status", value: sd.statusAtividade, options: opcoes?.status, onPick: (v) => set({ statusAtividade: v }), })}
+        {escolha({ label: "Prioridade", value: sd.prioridadeAtividade, options: opcoes?.prioridades, onPick: (v) => set({ prioridadeAtividade: v }), })}
+      </div>
+
+      <h3>Dado customizado</h3>
+      <label>
+        Tipo (tabela) do dado customizado
+        <input list="tipos-dado" value={sd.tipoDado} onChange={(e) => set({ tipoDado: e.target.value })} />
+        <datalist id="tipos-dado">
+          {opcoes?.tiposDado.map((t) => <option key={t} value={t} />)}
+        </datalist>
+        <small className="muted">Cada análise vira uma linha desse tipo no cliente, com sentimento, satisfação, riscos e resumo.</small>
+      </label>
+    </>
+  );
+}
 
 function SettingsForm() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -61,18 +158,18 @@ function SettingsForm() {
           ))}
         </select>
       </label>
-      <h2>Conversas do WhatsApp</h2>
+      <SensedataSection settings={settings} onChange={setSettings} />
+
+      <h2>Webhook (opcional)</h2>
       <label>
-        Webhook para o CRM
+        URL do webhook
         <input
           type="url"
           value={settings.webhookUrl}
           placeholder="https://n8n.suaempresa.com/webhook/conversas"
           onChange={(e) => setSettings({ ...settings, webhookUrl: e.target.value })}
         />
-        <small className="muted">
-          Recebe a análise em JSON (POST). Use n8n, Zapier ou Make para atualizar o CRM: nota, tarefa, health score.
-        </small>
+        <small className="muted">Recebe a análise em JSON (POST), para n8n, Zapier ou Make.</small>
       </label>
       <label className="switch">
         <input
@@ -82,9 +179,18 @@ function SettingsForm() {
         />
         Enviar também a transcrição da conversa
       </label>
+      <label>
+        Destino padrão das análises
+        <select value={settings.destinoPadrao} onChange={(e) => setSettings({ ...settings, destinoPadrao: e.target.value as Destino })}>
+          <option value="sd_atividade">Sensedata · Atividade</option>
+          <option value="sd_dados">Sensedata · Dado customizado</option>
+          <option value="sd_nota">Sensedata · Nota do cliente</option>
+          <option value="webhook">Webhook</option>
+        </select>
+      </label>
       {error && <p className="error">{error}</p>}
       <button className="primary" type="submit">
-        {saved ? "Salvo ✓" : "Salvar"}
+        {saved ? "Salvo" : "Salvar"}
       </button>
     </form>
   );
@@ -142,7 +248,7 @@ function IntegrationForm({ initial, onDone }: { initial?: Integration; onDone():
                 setStatus(undefined);
               }}
             >
-              <span className="emoji">{c.emoji}</span>
+              <ConnectorIcon id={c.id} />
               <strong>{c.name}</strong>
               <small className="muted">{c.description}</small>
             </button>
@@ -198,7 +304,7 @@ export function Options() {
   return (
     <div className="options">
       <header className="options-head">
-        <span className="logo">🌹</span>
+        <Carnation size={44} />
         <div>
           <h1>Quem Sabe Faz a Hora</h1>
           <p className="muted">“Vem, vamos embora, que esperar não é saber.”</p>
@@ -219,12 +325,12 @@ export function Options() {
         {editing ? (
           <IntegrationForm initial={editing === "new" ? undefined : editing} onDone={() => setEditing(undefined)} />
         ) : integrations.length === 0 ? (
-          <p className="muted">Nenhum sistema conectado. Comece pelo ERP de demonstração 🌹.</p>
+          <p className="muted">Nenhum sistema conectado. Comece pelo ERP de demonstração.</p>
         ) : (
           <ul className="cards">
             {integrations.map((i) => (
               <li key={i.id} className={`card ${i.enabled ? "" : "disabled"}`}>
-                <span className="emoji">{getConnector(i.connectorId).emoji}</span>
+                <ConnectorIcon id={i.connectorId} />
                 <div className="card-body">
                   <strong>{i.name}</strong>
                   <span className="muted">{getConnector(i.connectorId).name}</span>

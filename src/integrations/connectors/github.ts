@@ -41,7 +41,6 @@ export const githubConnector: Connector = {
   id: "github",
   name: "GitHub",
   description: "Repositórios, issues e pull requests.",
-  emoji: "🐙",
   configFields: [
     {
       key: "token",

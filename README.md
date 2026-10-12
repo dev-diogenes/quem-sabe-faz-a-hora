@@ -9,18 +9,19 @@ Extensão do Google Chrome (Manifest V3) que funciona como **hub de integração
 ## Funcionalidades
 
 - **Hub de sistemas**: lista os sistemas conectados. Ao abrir um deles você vê métricas e tabelas com dados ao vivo.
+- **Visual "Pra não dizer que não falei das flores"**: cravo, tipografia de cartaz e status coloridos (fontes empacotadas, sem dependência externa).
 - **Chat com o Claude** no Side Panel, que acompanha você em qualquer aba:
   - escolha quais sistemas entram no contexto (chips no topo do chat);
   - o Claude **consulta os sistemas por conta própria** via *tool use* (cada conector expõe ferramentas);
   - opção **📄 Página atual**: o texto da aba ativa entra no contexto;
   - respostas em streaming, com histórico salvo localmente.
-- **Conversas do WhatsApp** (aba *Conversas*): captura a conversa aberta no WhatsApp Web, anonimiza dados pessoais, exporta em JSON/CSV/TXT e analisa com o Claude **sentimento, satisfação, oportunidade de venda, upsell e risco de cancelamento**, com evidências, próxima ação e mensagem sugerida. Guarda o histórico e envia as análises ao CRM por webhook (n8n, Zapier, Make). Escopo e riscos em [`docs/escopo-conversas-whatsapp.md`](docs/escopo-conversas-whatsapp.md).
+- **Conversas** (aba *Conversas*): captura a conversa aberta no **WhatsApp Web** ou a **thread inteira do Gmail**, anonimiza dados pessoais, exporta em JSON/CSV/TXT e analisa com o Claude **sentimento, satisfação, oportunidade de venda, upsell e risco de cancelamento**. Depois leva a análise para o **Sensedata** (atividade, dado customizado ou nota, com o contato localizado por `phone`/`phone2` ou e-mail) ou para um webhook. Detalhes em [`docs/sensedata.md`](docs/sensedata.md) e [`docs/escopo-conversas-whatsapp.md`](docs/escopo-conversas-whatsapp.md).
 - **Conectores incluídos**:
   | Conector | Para quê |
   |---|---|
-  | 🌹 ERP de demonstração | Dados fictícios de clientes e pedidos para testar sem credenciais |
-  | 🐙 GitHub | Repositórios, issues e pull requests |
-  | 🔌 API REST genérica | Qualquer sistema com API JSON (CRM, ERP, helpdesk, sistemas internos) |
+  | ERP de demonstração | Dados fictícios de clientes e pedidos para testar sem credenciais |
+  | GitHub | Repositórios, issues e pull requests |
+  | API REST genérica | Qualquer sistema com API JSON (CRM, ERP, helpdesk, sistemas internos) |
 
 ## Arquitetura
 
@@ -41,8 +42,8 @@ Extensão do Google Chrome (Manifest V3) que funciona como **hub de integração
 | Manifesto | `manifest.config.ts` | Permissões (`sidePanel`, `storage`, `scripting`...), painel lateral, service worker, content script |
 | Painel lateral | `src/sidepanel/` | Interface do hub e do chat |
 | Service worker | `src/background/` | Fala com a API do Claude (streaming + loop de ferramentas) e executa os conectores |
-| Content scripts | `src/content/` | Lê o texto da página atual e a conversa aberta no WhatsApp Web |
-| Conversas do WhatsApp | `src/whatsapp/` | Captura, anonimização, exportação e esquema da análise |
+| Content scripts | `src/content/` | Lê o texto da página atual, a conversa do WhatsApp Web e a thread do Gmail |
+| Conversas | `src/conversas/` | Captura, anonimização, exportação, esquema da análise, Sensedata e webhook |
 | Opções | `src/options/` | Chave da API, modelo, esforço e cadastro dos sistemas |
 | Conectores | `src/integrations/` | Contrato `Connector` e implementações |
 
@@ -63,8 +64,8 @@ npm run build        # gera dist/
 ```
 
 1. Abra `chrome://extensions`, ative o **Modo do desenvolvedor** e clique em **Carregar sem compactação**, apontando para `dist/`.
-2. Clique no ícone 🌹: o painel lateral abre.
-3. Em **⚙ Configurações**, informe sua chave da API da Anthropic e conecte o **ERP de demonstração**.
+2. Clique no ícone do cravo: o painel lateral abre.
+3. Em **Configurações** (ícone de engrenagem), informe sua chave da API da Anthropic e conecte o **ERP de demonstração**.
 4. Vá ao **Chat** e pergunte: *"Quais pedidos estão atrasados e de quais clientes?"*
 
 Para desenvolvimento com recarga automática: `npm run dev` e carregue `dist/` da mesma forma.
@@ -78,7 +79,6 @@ export const meuSistema: Connector = {
   id: "meu-sistema",
   name: "Meu Sistema",
   description: "O que ele faz",
-  emoji: "✊",
   configFields: [{ key: "token", label: "Token", type: "password", required: true }],
   origins: () => ["https://api.meusistema.com/*"],  // permissão pedida em tempo de execução
   test: async (config) => ({ ok: true, message: "Conectado" }),

@@ -26,7 +26,6 @@ export const demoConnector: Connector = {
   id: "demo",
   name: "ERP de demonstração",
   description: "Sistema fictício com clientes e pedidos, para testar o hub sem credenciais.",
-  emoji: "🌹",
   configFields: [],
   async test() {
     return { ok: true, message: "Sistema de demonstração sempre disponível." };

@@ -40,12 +40,19 @@ export default defineManifest({
       js: ["src/content/whatsapp.ts"],
       run_at: "document_idle",
     },
+    {
+      matches: ["https://mail.google.com/*"],
+      js: ["src/content/gmail.ts"],
+      run_at: "document_idle",
+    },
   ],
   permissions: ["sidePanel", "storage", "activeTab", "scripting", "tabs"],
   host_permissions: [
     "https://api.anthropic.com/*",
     "https://api.github.com/*",
     "https://web.whatsapp.com/*",
+    "https://mail.google.com/*",
+    "https://api.sensedata.io/*",
   ],
   // Sistemas REST genéricos pedem permissão de host em tempo de execução,
   // apenas para a origem que o usuário cadastrar.

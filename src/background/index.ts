@@ -28,7 +28,7 @@ chrome.runtime.onConnect.addListener((port) => {
   });
 });
 
-// Análise de conversas do WhatsApp: pedido/resposta simples, sem streaming.
+// Análise de conversas (WhatsApp e e-mail): pedido/resposta simples, sem streaming.
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type !== ANALYZE_CHAT) return;
   analyzeChat(msg.chat)

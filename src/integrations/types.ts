@@ -63,7 +63,6 @@ export interface Connector {
   id: string;
   name: string;
   description: string;
-  emoji: string;
   configFields: ConfigField[];
   /** Origens que precisam de permissão de host (pedida em tempo de execução). */
   origins?(config: IntegrationConfig): string[];

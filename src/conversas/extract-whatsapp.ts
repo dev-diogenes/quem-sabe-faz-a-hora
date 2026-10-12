@@ -1,4 +1,4 @@
-import type { WaChat } from "./types";
+import type { Conversa } from "./types";
 
 /**
  * Lê a conversa aberta no WhatsApp Web a partir do DOM.
@@ -9,18 +9,28 @@ import type { WaChat } from "./types";
  * que se ajusta. Só as mensagens já carregadas na tela são capturadas:
  * role a conversa para cima para incluir mensagens antigas.
  */
-export function extractWhatsAppChat(): WaChat | { erro: string } {
+export function extractWhatsAppChat(): Conversa | { erro: string } {
   const SEL = {
     main: "#main",
     contato: "header span[dir='auto']",
     mensagem: "div.copyable-text[data-pre-plain-text]",
     texto: "span.selectable-text",
+    // Linhas de mensagem carregam o número do chat: "false_5511987654321@c.us_3EB0..."
+    idMensagem: "[data-id*='@c.us']",
   };
 
   const main = document.querySelector(SEL.main);
   if (!main) return { erro: "Abra uma conversa no WhatsApp Web antes de capturar." };
 
   const contato = main.querySelector(SEL.contato)?.textContent?.trim() || "Contato";
+
+  // Telefone do cliente: pelo data-id das mensagens; se o contato não estiver
+  // salvo, o próprio título do chat é o número.
+  const dataId = main.querySelector(SEL.idMensagem)?.getAttribute("data-id") ?? "";
+  const doId = dataId.match(/_(\d{8,15})@c\.us/)?.[1];
+  const doTitulo = /^\+?[\d\s()-]{8,}$/.test(contato) ? contato.replace(/\D/g, "") : undefined;
+  const identificador = doId || doTitulo;
+
   const mensagens = [...main.querySelectorAll<HTMLElement>(SEL.mensagem)].map((el) => {
     // Formato do atributo: "[10:32, 12/10/2026] Fulano: "
     const meta = el.getAttribute("data-pre-plain-text") ?? "";
@@ -39,5 +49,5 @@ export function extractWhatsAppChat(): WaChat | { erro: string } {
   });
 
   if (!mensagens.length) return { erro: "Nenhuma mensagem de texto encontrada na conversa aberta." };
-  return { contato, capturadoEm: new Date().toISOString(), mensagens };
+  return { canal: "whatsapp", contato, identificador, capturadoEm: new Date().toISOString(), mensagens };
 }

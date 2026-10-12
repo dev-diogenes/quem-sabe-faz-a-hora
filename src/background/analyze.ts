@@ -1,10 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { storage } from "../lib/storage";
-import { ConversationAnalysisSchema, type ConversationAnalysis } from "../whatsapp/analysis";
-import type { WaChat } from "../whatsapp/types";
+import { ConversationAnalysisSchema, type ConversationAnalysis } from "../conversas/analysis";
+import { CANAL_NOME, type Conversa } from "../conversas/types";
 
-const SYSTEM_PROMPT = `Você analisa conversas comerciais e de atendimento do WhatsApp para equipes de vendas e Customer Success.
+const SYSTEM_PROMPT = `Você analisa conversas comerciais e de atendimento (WhatsApp e threads de e-mail) para equipes de vendas e Customer Success.
 
 Avalie a conversa do ponto de vista do cliente:
 - Sentimento: como o cliente se sente e como isso mudou ao longo da conversa.
@@ -18,11 +18,15 @@ Regras:
 - Se não houver sinal, use o nível "nenhuma" e deixe as evidências vazias. Não invente.
 - Escreva em português do Brasil.`;
 
-export async function analyzeChat(chat: WaChat): Promise<ConversationAnalysis> {
+export async function analyzeChat(chat: Conversa): Promise<ConversationAnalysis> {
   const settings = await storage.getSettings();
   if (!settings.apiKey) throw new Error("Configure sua chave da API da Anthropic nas opções da extensão.");
 
-  const transcript = chat.mensagens.map((m) => `[${m.horario}] ${m.autor} (${m.direcao}): ${m.texto}`).join("\n");
+  // Só o conteúdo vai ao Claude: telefone/e-mail do cliente (identificador)
+  // e e-mails dos remetentes ficam de fora.
+  const separador = chat.canal === "email" ? "\n\n---\n\n" : "\n";
+  const transcript = chat.mensagens.map((m) => `[${m.horario}] ${m.autor} (${m.direcao}): ${m.texto}`).join(separador);
+  const assunto = chat.assunto ? ` assunto="${chat.assunto.replace(/"/g, "'")}"` : "";
   const client = new Anthropic({ apiKey: settings.apiKey, dangerouslyAllowBrowser: true });
 
   const response = await client.beta.messages.parse({
@@ -32,7 +36,7 @@ export async function analyzeChat(chat: WaChat): Promise<ConversationAnalysis> {
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
     system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: `<conversa contato="${chat.contato}">\n${transcript}\n</conversa>` }],
+    messages: [{ role: "user", content: `<conversa canal="${CANAL_NOME[chat.canal]}" contato="${chat.contato}"${assunto}>\n${transcript}\n</conversa>` }],
   });
 
   if (response.stop_reason === "refusal") throw new Error("O modelo recusou analisar esta conversa.");

@@ -36,7 +36,13 @@ O site e a página da extensão não puderam ser lidos durante o desenvolvimento
 
 **Sobre a captura automática:** conectar um número por QR Code e ler as conversas num servidor usa uma sessão não oficial do WhatsApp Web. Isso contraria os termos do WhatsApp e expõe o número a bloqueio. Para captura automática, o caminho recomendado é a **WhatsApp Business Platform (Cloud API)**, que recebe as mensagens por webhook. Esse é um item da Fase 3.
 
-## O que já está entregue (v0.3)
+## Novidades da v0.4
+
+- **Gmail**: captura a thread aberta inteira, com remetentes, datas e corpo de cada mensagem expandida, sem o histórico citado. Avisa quando há mensagens recolhidas.
+- **Sensedata**: localiza o contato por `phone`/`phone2` (WhatsApp) ou `email` (Gmail) e grava a análise como atividade, dado customizado ou nota. Ver [`sensedata.md`](sensedata.md).
+- O telefone ou e-mail do cliente é capturado para o CRM, mas nunca vai ao Claude.
+
+## O que já estava entregue (v0.3)
 
 | Capacidade | Como funciona |
 |---|---|
@@ -62,7 +68,9 @@ Código: `src/whatsapp/` (inclui `webhook.ts`), `src/content/whatsapp.ts`, `src/
 ### Fase 3: integração com o hub
 - [ ] Expor as análises como conector, para o Chat cruzar com ERP e CRM ("clientes com risco alto e pedido atrasado")
 - [x] Enviar a análise para o CRM via webhook
-- [ ] Integrações nativas com CRMs (HubSpot, Pipedrive, RD Station) sem passar por n8n
+- [x] Integração nativa com o Sensedata (atividade, dado customizado, nota)
+- [x] Threads do Gmail
+- [ ] Outros CRMs nativos (HubSpot, Pipedrive, RD Station)
 - [ ] Captura automática pela WhatsApp Business Platform (API oficial)
 - [ ] Alertas no hub quando o risco de cancelamento for alto
 

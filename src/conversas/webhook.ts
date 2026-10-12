@@ -6,21 +6,25 @@ export function webhookOrigin(url: string): string {
 }
 
 /**
- * Envia a análise para o webhook configurado (n8n, Zapier, Make ou um
- * endpoint do CRM), que decide o que atualizar: nota, tarefa, health score.
- * Por padrão vão só o contato e a análise; a transcrição fica opcional.
+ * Envia a análise para o webhook configurado (n8n, Zapier, Make), que
+ * decide o que atualizar. Vão o contato, o identificador (telefone ou
+ * e-mail, para casar com o CRM) e a análise; a transcrição é opcional.
  */
 export async function sendToWebhook(url: string, record: AnalysisRecord, incluirMensagens: boolean): Promise<void> {
+  const { conversa } = record;
   const payload = {
     origem: "quem-sabe-faz-a-hora",
-    tipo: "analise_conversa_whatsapp",
+    tipo: "analise_conversa",
     id: record.id,
-    contato: record.chat.contato,
+    canal: conversa.canal,
+    contato: conversa.contato,
+    identificador: conversa.identificador,
+    assunto: conversa.assunto,
     anonimizado: record.anonimizado,
-    capturadoEm: record.chat.capturadoEm,
+    capturadoEm: conversa.capturadoEm,
     analisadoEm: record.analisadoEm,
     analise: record.analise,
-    ...(incluirMensagens ? { mensagens: record.chat.mensagens } : {}),
+    ...(incluirMensagens ? { mensagens: conversa.mensagens } : {}),
   };
   const res = await fetch(url, {
     method: "POST",

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { getConnector } from "../../integrations/registry";
 import { extractPageContext } from "../../lib/page";
 import { renderMarkdown } from "../../lib/markdown";
 import { CHAT_PORT, GET_PAGE_CONTEXT, type ChatEvent, type ChatRequest, type PageContext } from "../../lib/messages";
 import { storage, type Conversation } from "../../lib/storage";
 import { useStored } from "../../lib/useStorage";
+import { CheckIcon, PageIcon, SendIcon, XIcon } from "../Icons";
 
 interface Props {
   focus: string[];
@@ -85,11 +85,11 @@ export function Chat({ focus, onFocusChange }: Props) {
             onClick={() => toggle(i.id)}
             title={focus.length ? "Clique para incluir/remover" : "Sem seleção, todos os sistemas ativos entram no contexto"}
           >
-            {getConnector(i.connectorId).emoji} {i.name}
+            {i.name}
           </button>
         ))}
         <button className={`chip ${includePage ? "on" : ""}`} onClick={() => setIncludePage(!includePage)}>
-          📄 Página atual
+          <PageIcon size={14} /> Página atual
         </button>
         {conversation.display.length > 0 && (
           <button className="link right" onClick={() => void storage.clearConversation()} disabled={busy}>
@@ -101,7 +101,7 @@ export function Chat({ focus, onFocusChange }: Props) {
       <div className="messages">
         {conversation.display.length === 0 && (
           <div className="welcome">
-            <h2>Caminhando e cantando…</h2>
+            <h2 className="poster">Caminhando e cantando</h2>
             <p className="muted">
               Pergunte sobre qualquer sistema integrado. Sem seleção de contexto, o Claude pode consultar todos os
               sistemas ativos.
@@ -120,7 +120,12 @@ export function Chat({ focus, onFocusChange }: Props) {
               <div className="tools">
                 {m.tools.map((t, j) => (
                   <span key={j} className={`tool ${t.status}`}>
-                    {t.status === "running" ? "⏳" : t.status === "ok" ? "✓" : "✗"} {t.system} · {t.name}
+                    <span className="tool-dot">
+                      {t.status === "ok" ? <CheckIcon size={11} /> : t.status === "error" ? <XIcon size={11} /> : null}
+                    </span>
+                    <span>
+                      <strong>{t.system}</strong> · {t.name}
+                    </span>
                   </span>
                 ))}
               </div>
@@ -146,6 +151,7 @@ export function Chat({ focus, onFocusChange }: Props) {
       >
         <textarea
           value={input}
+          aria-label="Pergunta para o Claude"
           placeholder="Pergunte sobre seus sistemas…"
           rows={2}
           onChange={(e) => setInput(e.target.value)}
@@ -156,8 +162,8 @@ export function Chat({ focus, onFocusChange }: Props) {
             }
           }}
         />
-        <button className="primary" type="submit" disabled={busy || !input.trim()}>
-          {busy ? "…" : "Enviar"}
+        <button className="send" type="submit" aria-label="Enviar" disabled={busy || !input.trim()}>
+          <SendIcon size={18} />
         </button>
       </form>
     </section>

@@ -26,8 +26,8 @@ export type ChatEvent =
 /** Painel -> content script (via chrome.tabs.sendMessage). */
 export const GET_PAGE_CONTEXT = "GET_PAGE_CONTEXT";
 
-/** Painel -> content script do WhatsApp Web. */
-export const GET_WHATSAPP_CHAT = "GET_WHATSAPP_CHAT";
+/** Painel -> content script do WhatsApp Web ou do Gmail. */
+export const GET_CONVERSATION = "GET_CONVERSATION";
 
 /** Painel -> service worker (chrome.runtime.sendMessage, com resposta). */
 export const ANALYZE_CHAT = "ANALYZE_CHAT";

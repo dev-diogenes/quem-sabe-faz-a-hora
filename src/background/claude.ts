@@ -94,7 +94,7 @@ export async function runChatTurn(req: ChatRequest, emit: (e: ChatEvent) => void
   conversation.display.push({
     role: "user",
     text: req.text,
-    context: [...focused.map((i) => i.name), ...(req.page ? [`📄 ${req.page.title}`] : [])],
+    context: [...focused.map((i) => i.name), ...(req.page ? [`Página: ${req.page.title}`] : [])],
   });
   const reply: DisplayMessage = { role: "assistant", text: "", tools: [] };
   conversation.display.push(reply);

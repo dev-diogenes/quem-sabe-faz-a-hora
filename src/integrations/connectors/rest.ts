@@ -51,7 +51,6 @@ export const restConnector: Connector = {
   id: "rest",
   name: "API REST genérica",
   description: "Qualquer sistema com API JSON: CRM, ERP, helpdesk, sistemas internos.",
-  emoji: "🔌",
   configFields: [
     { key: "baseUrl", label: "URL base", type: "url", placeholder: "https://api.meusistema.com/v1", required: true },
     { key: "authHeader", label: "Cabeçalho de autenticação", type: "text", placeholder: "Authorization" },
