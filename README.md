@@ -14,6 +14,7 @@ Extensão do Google Chrome (Manifest V3) que funciona como **hub de integração
   - o Claude **consulta os sistemas por conta própria** via *tool use* (cada conector expõe ferramentas);
   - opção **📄 Página atual**: o texto da aba ativa entra no contexto;
   - respostas em streaming, com histórico salvo localmente.
+- **Conversas do WhatsApp** (aba *Conversas*): captura a conversa aberta no WhatsApp Web, anonimiza dados pessoais, exporta em JSON/CSV/TXT e analisa com o Claude **sentimento, oportunidade de venda, upsell e risco de cancelamento**, com evidências, próxima ação e mensagem sugerida. Escopo e riscos em [`docs/escopo-conversas-whatsapp.md`](docs/escopo-conversas-whatsapp.md).
 - **Conectores incluídos**:
   | Conector | Para quê |
   |---|---|
@@ -40,7 +41,8 @@ Extensão do Google Chrome (Manifest V3) que funciona como **hub de integração
 | Manifesto | `manifest.config.ts` | Permissões (`sidePanel`, `storage`, `scripting`...), painel lateral, service worker, content script |
 | Painel lateral | `src/sidepanel/` | Interface do hub e do chat |
 | Service worker | `src/background/` | Fala com a API do Claude (streaming + loop de ferramentas) e executa os conectores |
-| Content script | `src/content/` | Lê o texto da página atual quando o chat pede |
+| Content scripts | `src/content/` | Lê o texto da página atual e a conversa aberta no WhatsApp Web |
+| Conversas do WhatsApp | `src/whatsapp/` | Captura, anonimização, exportação e esquema da análise |
 | Opções | `src/options/` | Chave da API, modelo, esforço e cadastro dos sistemas |
 | Conectores | `src/integrations/` | Contrato `Connector` e implementações |
 
@@ -99,6 +101,7 @@ export const meuSistema: Connector = {
 - [ ] Ações de escrita com confirmação explícita do usuário
 - [ ] Múltiplas conversas e busca no histórico
 - [ ] Servidores MCP como fonte de conectores
+- [ ] Conversas do WhatsApp: histórico, lote e integração com o CRM (ver o documento de escopo)
 
 ---
 

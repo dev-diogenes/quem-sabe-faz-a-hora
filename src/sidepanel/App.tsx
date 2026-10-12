@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Hub } from "./components/Hub";
 import { Chat } from "./components/Chat";
 import { SystemDetail } from "./components/SystemDetail";
+import { WhatsApp } from "./components/WhatsApp";
 
-type View = { name: "hub" } | { name: "system"; id: string } | { name: "chat" };
+type View = { name: "hub" } | { name: "system"; id: string } | { name: "chat" } | { name: "whatsapp" };
 
 export function App() {
   const [view, setView] = useState<View>({ name: "hub" });
@@ -22,11 +23,17 @@ export function App() {
           <span>Faz a Hora</span>
         </div>
         <nav className="tabs">
-          <button className={view.name !== "chat" ? "active" : ""} onClick={() => setView({ name: "hub" })}>
+          <button
+            className={view.name === "hub" || view.name === "system" ? "active" : ""}
+            onClick={() => setView({ name: "hub" })}
+          >
             Hub
           </button>
           <button className={view.name === "chat" ? "active" : ""} onClick={() => openChat(chatFocus)}>
             Chat
+          </button>
+          <button className={view.name === "whatsapp" ? "active" : ""} onClick={() => setView({ name: "whatsapp" })}>
+            Conversas
           </button>
           <button className="icon" title="Configurações" onClick={() => chrome.runtime.openOptionsPage()}>
             ⚙
@@ -41,6 +48,7 @@ export function App() {
           <SystemDetail id={view.id} onBack={() => setView({ name: "hub" })} onChat={() => openChat([view.id])} />
         )}
         {view.name === "chat" && <Chat focus={chatFocus} onFocusChange={setChatFocus} />}
+        {view.name === "whatsapp" && <WhatsApp />}
       </main>
     </div>
   );

@@ -35,9 +35,18 @@ export default defineManifest({
       js: ["src/content/index.ts"],
       run_at: "document_idle",
     },
+    {
+      matches: ["https://web.whatsapp.com/*"],
+      js: ["src/content/whatsapp.ts"],
+      run_at: "document_idle",
+    },
   ],
   permissions: ["sidePanel", "storage", "activeTab", "scripting", "tabs"],
-  host_permissions: ["https://api.anthropic.com/*", "https://api.github.com/*"],
+  host_permissions: [
+    "https://api.anthropic.com/*",
+    "https://api.github.com/*",
+    "https://web.whatsapp.com/*",
+  ],
   // Sistemas REST genéricos pedem permissão de host em tempo de execução,
   // apenas para a origem que o usuário cadastrar.
   optional_host_permissions: ["https://*/*", "http://*/*"],

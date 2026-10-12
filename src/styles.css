@@ -151,3 +151,39 @@ th { background: var(--surface-2); }
 .connector.on { border-color: var(--accent); background: var(--accent-soft); }
 .switch { flex-direction: row; align-items: center; gap: 4px; font-weight: 400; }
 .switch input { width: auto; }
+
+/* ---------- conversas do WhatsApp ---------- */
+.row.wrap { flex-wrap: wrap; align-items: center; }
+.small { font-size: 12px; }
+.hero .switch { margin: 6px 0; font-size: 13px; }
+.analysis { display: flex; flex-direction: column; gap: 10px; }
+.signal, .sentiment {
+  display: flex; flex-direction: column; gap: 6px; padding: 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.signal p, .sentiment p { margin: 0; }
+.signal ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.signal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.level { padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: capitalize; }
+.level.none { background: var(--surface-2); color: var(--muted); }
+.level.low { background: #e6ecfa; color: #24479a; }
+.level.mid { background: #fdf0da; color: #7a4705; }
+.level.high { background: #1f9d6b; color: #fff; }
+.level.risk.mid { background: #fdf0da; color: #7a4705; }
+.level.risk.high { background: #d7263d; color: #fff; }
+.level.sent-positivo { background: #1f9d6b; color: #fff; }
+.level.sent-neutro { background: var(--surface-2); color: var(--text); }
+.level.sent-negativo { background: #d7263d; color: #fff; }
+.level.sent-misto { background: #fdf0da; color: #7a4705; }
+.meter {
+  position: relative; height: 8px; border-radius: 4px;
+  background: linear-gradient(90deg, #d7263d, #f2a93b 50%, #1f9d6b);
+}
+.meter span {
+  position: absolute; top: -4px; width: 4px; height: 16px; margin-left: -2px;
+  border-radius: 2px; background: var(--text);
+}
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.signal.next { border-color: var(--accent); }
+.suggested { padding: 8px 10px; background: var(--surface-2); border-radius: 8px; white-space: pre-wrap; }
+.signal.next button { align-self: flex-start; }

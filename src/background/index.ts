@@ -1,4 +1,5 @@
-import { CHAT_PORT, type ChatEvent, type ChatRequest } from "../lib/messages";
+import { ANALYZE_CHAT, CHAT_PORT, type ChatEvent, type ChatRequest } from "../lib/messages";
+import { analyzeChat } from "./analyze";
 import { runChatTurn } from "./claude";
 
 // Clique no ícone da extensão abre o painel lateral.
@@ -25,4 +26,13 @@ chrome.runtime.onConnect.addListener((port) => {
       emit({ type: "done" });
     });
   });
+});
+
+// Análise de conversas do WhatsApp: pedido/resposta simples, sem streaming.
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type !== ANALYZE_CHAT) return;
+  analyzeChat(msg.chat)
+    .then((analise) => sendResponse({ ok: true, analise }))
+    .catch((e) => sendResponse({ ok: false, erro: String(e?.message ?? e) }));
+  return true; // resposta assíncrona
 });
